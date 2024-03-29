@@ -1,0 +1,392 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><title>Mysql 双主部署 - Power!</title><meta name=Description content="Mysql 双主部署"><meta property="og:title" content="Mysql 双主部署"><meta property="og:description" content="Mysql 双主部署"><meta property="og:type" content="article"><meta property="og:url" content="https://blog.plz.ac/posts/mysql-mm/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2024-03-28T12:45:23-04:00"><meta property="article:modified_time" content="2024-03-28T12:45:23-04:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="Mysql 双主部署"><meta name=twitter:description content="Mysql 双主部署"><meta name=application-name content="Power!"><meta name=apple-mobile-web-app-title content="Power!"><meta name=theme-color content="#f8f8f8"><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=manifest href=/site.webmanifest><link rel=canonical href=https://blog.plz.ac/posts/mysql-mm/><link rel=prev href=https://blog.plz.ac/posts/gentoo-kvm-pci-passthrough/><link rel=next href=https://blog.plz.ac/posts/gcp-ubuntu-1804-vncserver/><link rel=stylesheet href=/css/main.css><link rel=stylesheet href=/lib/normalize/normalize.min.css><link rel=stylesheet href=/css/color.css><link rel=stylesheet href=/css/style.min.css><link rel=preload as=style onload='this.onload=null,this.rel="stylesheet"' href=/lib/fontawesome-free/all.min.css><noscript><link rel=stylesheet href=/lib/fontawesome-free/all.min.css></noscript><link rel=preload as=style onload='this.onload=null,this.rel="stylesheet"' href=/lib/animate/animate.min.css><noscript><link rel=stylesheet href=/lib/animate/animate.min.css></noscript><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"Mysql 双主部署","inLanguage":"en-us","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/blog.plz.ac\/posts\/mysql-mm\/"},"genre":"posts","keywords":"Linux, Mysql, Keepalived","wordcount":1080,"url":"https:\/\/blog.plz.ac\/posts\/mysql-mm\/","datePublished":"2024-03-28T12:45:23-04:00","dateModified":"2024-03-28T12:45:23-04:00","publisher":{"@type":"Organization","name":"Chris Su"},"author":{"@type":"Person","name":"Chris Su"},"description":"Mysql 双主部署"}</script><script src=//instant.page/5.2.0 defer type=module integrity=sha384-jnZyxPjiipYXnSU0ygqeac2q7CVYMbh84q0uHVRRxEtvFPiQYbXWUorga2aqZJ0z></script></head><body header-desktop header-mobile><script type=text/javascript>function setTheme(e){document.body.setAttribute("theme",e),document.documentElement.style.setProperty("color-scheme",e==="light"?"light":"dark"),window.theme=e,window.isDark=window.theme!=="light"}function saveTheme(e){window.localStorage&&localStorage.setItem("theme",e)}function getMeta(e){const t=document.getElementsByTagName("meta");for(let n=0;n<t.length;n++)if(t[n].getAttribute("name")===e)return t[n];return""}if(window.localStorage&&localStorage.getItem("theme")){let e=localStorage.getItem("theme");e==="light"||e==="dark"||e==="black"?setTheme(e):setTheme(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}else"auto"==="light"||"auto"==="dark"||"auto"==="black"?(setTheme("auto"),saveTheme("auto")):(saveTheme("auto"),setTheme(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));let metaColors={light:"#f8f8f8",dark:"#252627",black:"#000000"};getMeta("theme-color").content=metaColors[document.body.getAttribute("theme")],window.switchThemeEventSet=new Set</script><div id=back-to-top></div><div id=mask></div><div class=wrapper><header class=desktop id=header-desktop><div class=header-wrapper><div class=header-title><a href=/ title=Power!>Power!</a></div><div class=menu><div class=menu-inner><a class=menu-item href=/tags/>标签 </a><a class=menu-item href=/posts/>文章 </a><span class="menu-item delimiter"></span><a href=javascript:void(0); class="menu-item theme-switch" title="Switch Theme">
+<i class="fas fa-adjust fa-fw"></i></a></div></div></div></header><header class=mobile id=header-mobile><div class=header-container><div class=header-wrapper><div class=header-title><a href=/ title=Power!>Power!</a></div><div class=menu-toggle id=menu-toggle-mobile><span></span><span></span><span></span></div></div><div class=menu id=menu-mobile><a class=menu-item href=/tags/ title>标签</a><a class=menu-item href=/posts/ title>文章</a><a href=javascript:void(0); class="menu-item theme-switch" title="Switch Theme">
+<i class="fas fa-adjust fa-fw"></i></a></div></div></header><div class="search-dropdown desktop"><div id=search-dropdown-desktop></div></div><div class="search-dropdown mobile"><div id=search-dropdown-mobile></div></div><main class=main><div class=container><div class=toc id=toc-auto><h2 class=toc-title>Contents</h2><div class=toc-content id=toc-content-auto><nav id=TableOfContents><ul><li><a href=#环境配置>环境配置</a></li><li><a href=#mysql部署>Mysql部署</a></li><li><a href=#部署keepalived>部署keepalived</a></li></ul></nav></div></div><script>document.getElementsByTagName("main")[0].setAttribute("autoTOC","true")</script><article class="page single"><h1 class="single-title animate__animated animate__flipInX">Mysql 双主部署</h1><div class=post-meta><div class=post-meta-line><span class=post-author><span class="author fas fa-user-circle fa-fw"></span><a href=https://blog.plz.ac title=Author target=_blank rel="noopener noreferrer author" class=author>Chris Su</a>
+</span>&nbsp;<span class=post-category>included in </span>&nbsp;<span class=post-category>categories <a href=/categories/linux/><i class="far fa-folder fa-fw"></i>Linux</a>&nbsp;<a href=/categories/mysql/><i class="far fa-folder fa-fw"></i>Mysql</a>&nbsp;<a href=/categories/keepalived/><i class="far fa-folder fa-fw"></i>Keepalived</a></span></div><div class=post-meta-line><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime=2024-03-28>2024-03-28</time>&nbsp;<i class="far fa-edit fa-fw"></i>&nbsp;<time datetime=2024-03-28>2024-03-28</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;1080 words&nbsp;<i class="far fa-clock fa-fw"></i>&nbsp;6 minutes&nbsp;</div></div><div class="details toc" id=toc-static kept><div class="details-summary toc-title"><span>Contents</span>
+<span><i class="details-icon fas fa-angle-right"></i></span></div><div class="details-content toc-content" id=toc-content-static><nav id=TableOfContents><ul><li><a href=#环境配置>环境配置</a></li><li><a href=#mysql部署>Mysql部署</a></li><li><a href=#部署keepalived>部署keepalived</a></li></ul></nav></div></div><div class=content id=content><p>记录一下如何搭建Mysql 双主集群，这是老的笔记中整理出来的部分内容没有再次验证。</p><h2 id=环境配置 class=headerLink><a href=#%e7%8e%af%e5%a2%83%e9%85%8d%e7%bd%ae class=header-mark></a>环境配置</h2><p>操作系统： CentOS7.x</p><p>VM数量2台</p><blockquote><p>关闭selinux和防火墙</p></blockquote><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>systemctl disable firewalld 
+</span></span><span class=line><span class=cl>sed -i <span class=s1>&#39;s/SELINUX=enforcing/SELINUX=disabled/g&#39;</span> /etc/selinux/config
+</span></span></code></pre></div><p>设置主机名：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=c1># 节点1</span>
+</span></span><span class=line><span class=cl>hostnamectl set-hostname mysql-master1
+</span></span><span class=line><span class=cl><span class=c1># 节点2</span>
+</span></span><span class=line><span class=cl>hostnamectl set-hostname mysql-master2
+</span></span></code></pre></div><p>下载mysql：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>yum install wget -y
+</span></span><span class=line><span class=cl>wget -c https://cdn.mysql.com/archives/mysql-5.7/mysql-5.7.35-linux-glibc2.12-x86_64.tar.gz
+</span></span></code></pre></div><p>安装依赖：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>yum install libaio numactl -y
+</span></span></code></pre></div><p>用户和组：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>groupadd mysql
+</span></span><span class=line><span class=cl>useradd -m -r -g mysql mysql
+</span></span></code></pre></div><p>设置系统ulimit</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>vi  /etc/security/limits.conf 
+</span></span></code></pre></div><p>内容如下：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>mysql     soft    nproc    <span class=m>65536</span>
+</span></span><span class=line><span class=cl>mysql     hard    nproc    <span class=m>65536</span>
+</span></span><span class=line><span class=cl>mysql     soft    nofile   <span class=m>65536</span>
+</span></span><span class=line><span class=cl>mysql     hard    nofile   <span class=m>65536</span>
+</span></span></code></pre></div><p>打开 /etc/security/limits.d/90-nproc.conf 把参数调整为</p><pre tabindex=0><code>*          soft    nproc     65536
+root       soft    nproc     unlimited
+*          soft    nofile    65536
+root       soft    nofile    unlimited
+</code></pre><p>添加hosts：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=nv>host_ip</span><span class=o>=</span><span class=k>$(</span>ifconfig <span class=p>|</span> grep inet <span class=p>|</span> grep cast <span class=p>|</span> awk <span class=s1>&#39;{print $2}&#39;</span> <span class=p>|</span> awk -F: <span class=s1>&#39;{print $NF}&#39;</span> <span class=p>|</span> head -1<span class=k>)</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> <span class=s2>&#34;</span><span class=nv>$host_ip</span><span class=s2> `hostname`&#34;</span> &gt;&gt; /etc/hosts
+</span></span></code></pre></div><p>时间同步</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>yum install chrony -y
+</span></span><span class=line><span class=cl>systemctl <span class=nb>enable</span> chronyd --now
+</span></span></code></pre></div><h2 id=mysql部署 class=headerLink><a href=#mysql%e9%83%a8%e7%bd%b2 class=header-mark></a>Mysql部署</h2><p>安装mysql：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>tar -xvzf mysql-5.7.20-linux-glibc2.12-x86_64.tar.gz
+</span></span><span class=line><span class=cl>mv mysql-5.7.20-linux-glibc2.12-x86_64 /usr/local/mysql57
+</span></span></code></pre></div><p>创建软链接：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>ln -s  /usr/local/mysql57/bin/mysql /usr/bin/mysql
+</span></span><span class=line><span class=cl>ln -s  /usr/local/mysql57/bin/mysqlbinlog /usr/bin/mysqlbinlog
+</span></span></code></pre></div><p>创建mysql的日志和数据目录：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>mkdir -p /data/mysql_db/mysql_test
+</span></span><span class=line><span class=cl>mkdir -p /data/mysql_log/mysql_test
+</span></span></code></pre></div><p>初始化：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>/usr/local/mysql57/bin/mysqld --initialize-insecure --basedir<span class=o>=</span>/usr/local/mysql57 --datadir<span class=o>=</span>/data/mysql_db/mysql_test --user<span class=o>=</span>mysql
+</span></span><span class=line><span class=cl>/usr/local/mysql57/bin/mysql_ssl_rsa_setup --basedir<span class=o>=</span>/usr/local/mysql57 --datadir<span class=o>=</span>/data/mysql_db/mysql_test
+</span></span></code></pre></div><p>创建对应的启动脚本：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>cp /usr/local/mysql57/support-files/mysql.server /etc/init.d/mysqld-test
+</span></span></code></pre></div><p>修改<code>/etc/init.d/mysqld-test</code>内容如下：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=nv>basedir</span><span class=o>=</span>/usr/local/mysql57
+</span></span><span class=line><span class=cl><span class=nv>datadir</span><span class=o>=</span>/data/mysql_db/mysql_test
+</span></span><span class=line><span class=cl><span class=nv>default_file</span><span class=o>=</span>/data/mysql_db/mysql_test/my.cnf
+</span></span><span class=line><span class=cl><span class=nv>lock_file_path</span><span class=o>=</span><span class=s2>&#34;</span><span class=nv>$lockdir</span><span class=s2>/mysql-test&#34;</span>
+</span></span><span class=line><span class=cl><span class=nv>$bindir</span>/mysqld_safe  --defaults-file<span class=o>=</span><span class=s2>&#34;</span><span class=nv>$default_file</span><span class=s2>&#34;</span> --datadir<span class=o>=</span><span class=s2>&#34;</span><span class=nv>$datadir</span><span class=s2>&#34;</span> --pid-file<span class=o>=</span><span class=s2>&#34;</span><span class=nv>$mysqld_pid_file_path</span><span class=s2>&#34;</span> <span class=nv>$other_args</span> &gt;/dev/null 2&gt;<span class=p>&amp;</span><span class=m>1</span> <span class=p>&amp;</span>
+</span></span></code></pre></div><p>修改权限：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>chown mysql.mysql /etc/init.d/mysqld-test 
+</span></span><span class=line><span class=cl>chown mysql.mysql -R /data/mysql*
+</span></span></code></pre></div><p>启动mysql：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>su - mysql
+</span></span><span class=line><span class=cl><span class=o>[</span>mysql@mysql-master1 ~<span class=o>]</span>$ /etc/init.d/mysqld-test start
+</span></span><span class=line><span class=cl>Starting MySQL.. SUCCESS!
+</span></span></code></pre></div><p>测试链接：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>mysql -S /data/mysql_db/mysql_test/mysql.sock
+</span></span></code></pre></div><p>修改mysql配置：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>vim /data/mysql_db/mysql_test/my.cnf
+</span></span></code></pre></div><blockquote><p>mysql-master1</p></blockquote><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=o>[</span>client<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>port</span> <span class=o>=</span> <span class=m>3306</span>
+</span></span><span class=line><span class=cl>default-character-set<span class=o>=</span>utf8mb4
+</span></span><span class=line><span class=cl><span class=nv>socket</span> <span class=o>=</span> /data/mysql/mysql.sock
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>mysqld<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>datadir</span> <span class=o>=</span> /data/mysql
+</span></span><span class=line><span class=cl><span class=c1># basedir = /usr/local/mysql57</span>
+</span></span><span class=line><span class=cl><span class=nv>tmpdir</span> <span class=o>=</span> /tmp
+</span></span><span class=line><span class=cl><span class=nv>socket</span> <span class=o>=</span> /data/mysql/mysql.sock
+</span></span><span class=line><span class=cl>pid-file <span class=o>=</span> /var/run/mysqld/mysqld.pid
+</span></span><span class=line><span class=cl>skip-external-locking <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl>skip-name-resolve <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>port</span> <span class=o>=</span> <span class=m>3306</span>
+</span></span><span class=line><span class=cl><span class=nv>server_id</span> <span class=o>=</span> <span class=m>833306</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>default-storage-engine <span class=o>=</span> InnoDB
+</span></span><span class=line><span class=cl>character-set-server <span class=o>=</span> utf8mb4
+</span></span><span class=line><span class=cl><span class=nv>default_password_lifetime</span><span class=o>=</span><span class=m>0</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nv>auto_increment_offset</span> <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>auto_increment_increment</span> <span class=o>=</span> <span class=m>2</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#### log ####</span>
+</span></span><span class=line><span class=cl><span class=nv>log_timestamps</span><span class=o>=</span>system
+</span></span><span class=line><span class=cl><span class=nv>log_bin</span> <span class=o>=</span> /data/mysql_log/mysql_seg_3306/mysql-bin
+</span></span><span class=line><span class=cl><span class=nv>log_bin_index</span> <span class=o>=</span> /data/mysql_log/mysql_seg_3306/mysql-bin.index
+</span></span><span class=line><span class=cl><span class=nv>binlog_format</span> <span class=o>=</span> row
+</span></span><span class=line><span class=cl><span class=nv>relay_log_recovery</span><span class=o>=</span>ON
+</span></span><span class=line><span class=cl><span class=nv>relay_log</span><span class=o>=</span>/data/mysql_log/mysql_seg_3306/mysql-relay-bin
+</span></span><span class=line><span class=cl><span class=nv>relay_log_index</span><span class=o>=</span>/data/mysql_log/mysql_seg_3306/mysql-relay-bin.index
+</span></span><span class=line><span class=cl><span class=nv>log_error</span> <span class=o>=</span> /data/mysql_log/mysql_seg_3306/mysql-error.log
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#### replication ####</span>
+</span></span><span class=line><span class=cl><span class=nv>log_slave_updates</span> <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>replicate_wild_ignore_table</span> <span class=o>=</span> information_schema.%,performance_schema.%,sys.%
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#### semi sync replication settings #####</span>
+</span></span><span class=line><span class=cl><span class=nv>plugin_dir</span><span class=o>=</span>/usr/local/mysql57/lib/plugin
+</span></span><span class=line><span class=cl><span class=nv>plugin_load</span> <span class=o>=</span> <span class=s2>&#34;rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so&#34;</span>
+</span></span><span class=line><span class=cl><span class=nv>loose_rpl_semi_sync_master_enabled</span> <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>loose_rpl_semi_sync_slave_enabled</span> <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>loose_rpl_semi_sync_master_timeout</span> <span class=o>=</span> <span class=m>5000</span>
+</span></span></code></pre></div><blockquote><p>mysql-master2</p></blockquote><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=o>[</span>client<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>port</span> <span class=o>=</span> <span class=m>3306</span>
+</span></span><span class=line><span class=cl>default-character-set<span class=o>=</span>utf8mb4
+</span></span><span class=line><span class=cl><span class=nv>socket</span> <span class=o>=</span> /data/mysql_db/mysql_seg_3306/mysql.sock
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>mysqld<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>datadir</span> <span class=o>=</span> /data/mysql_db/mysql_seg_3306
+</span></span><span class=line><span class=cl><span class=nv>basedir</span> <span class=o>=</span> /usr/local/mysql57
+</span></span><span class=line><span class=cl><span class=nv>tmpdir</span> <span class=o>=</span> /tmp
+</span></span><span class=line><span class=cl><span class=nv>socket</span> <span class=o>=</span> /data/mysql_db/mysql_seg_3306/mysql.sock
+</span></span><span class=line><span class=cl>pid-file <span class=o>=</span> /data/mysql_db/mysql_seg_3306/mysql.pid
+</span></span><span class=line><span class=cl>skip-external-locking <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl>skip-name-resolve <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>port</span> <span class=o>=</span> <span class=m>3306</span>
+</span></span><span class=line><span class=cl><span class=nv>server_id</span> <span class=o>=</span> <span class=m>723306</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>default-storage-engine <span class=o>=</span> InnoDB
+</span></span><span class=line><span class=cl>character-set-server <span class=o>=</span> utf8mb4
+</span></span><span class=line><span class=cl><span class=nv>default_password_lifetime</span><span class=o>=</span><span class=m>0</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nv>auto_increment_offset</span> <span class=o>=</span> <span class=m>2</span>
+</span></span><span class=line><span class=cl><span class=nv>auto_increment_increment</span> <span class=o>=</span> <span class=m>2</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#### log ####</span>
+</span></span><span class=line><span class=cl><span class=nv>log_timestamps</span><span class=o>=</span>system
+</span></span><span class=line><span class=cl><span class=nv>log_bin</span> <span class=o>=</span> /data/mysql_log/mysql_seg_3306/mysql-bin
+</span></span><span class=line><span class=cl><span class=nv>log_bin_index</span> <span class=o>=</span> /data/mysql_log/mysql_seg_3306/mysql-bin.index
+</span></span><span class=line><span class=cl><span class=nv>binlog_format</span> <span class=o>=</span> row
+</span></span><span class=line><span class=cl><span class=nv>relay_log_recovery</span><span class=o>=</span>ON
+</span></span><span class=line><span class=cl><span class=nv>relay_log</span><span class=o>=</span>/data/mysql_log/mysql_seg_3306/mysql-relay-bin
+</span></span><span class=line><span class=cl><span class=nv>relay_log_index</span><span class=o>=</span>/data/mysql_log/mysql_seg_3306/mysql-relay-bin.index
+</span></span><span class=line><span class=cl><span class=nv>log_error</span> <span class=o>=</span> /data/mysql_log/mysql_seg_3306/mysql-error.log
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#### replication ####</span>
+</span></span><span class=line><span class=cl><span class=nv>log_slave_updates</span> <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>replicate_wild_ignore_table</span> <span class=o>=</span> information_schema.%,performance_schema.%,sys.%
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#### semi sync replication settings #####</span>
+</span></span><span class=line><span class=cl><span class=nv>plugin_dir</span><span class=o>=</span>/usr/local/mysql57/lib/plugin
+</span></span><span class=line><span class=cl><span class=nv>plugin_load</span> <span class=o>=</span> <span class=s2>&#34;rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so&#34;</span>
+</span></span><span class=line><span class=cl><span class=nv>loose_rpl_semi_sync_master_enabled</span> <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>loose_rpl_semi_sync_slave_enabled</span> <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>loose_rpl_semi_sync_master_timeout</span> <span class=o>=</span> <span class=m>5000</span>
+</span></span></code></pre></div><p>slave</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=o>[</span>client<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>port</span> <span class=o>=</span> <span class=m>3307</span>
+</span></span><span class=line><span class=cl>default-character-set<span class=o>=</span>utf8mb4
+</span></span><span class=line><span class=cl><span class=nv>socket</span> <span class=o>=</span> /data/mysql_db/mysql_seg_3307/mysql.sock
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>mysqld<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>datadir</span> <span class=o>=</span> /data/mysql_db/mysql_seg_3307
+</span></span><span class=line><span class=cl><span class=nv>basedir</span> <span class=o>=</span> /usr/local/mysql57
+</span></span><span class=line><span class=cl><span class=nv>tmpdir</span> <span class=o>=</span> /tmp
+</span></span><span class=line><span class=cl><span class=nv>socket</span> <span class=o>=</span> /data/mysql_db/mysql_seg_3307/mysql.sock
+</span></span><span class=line><span class=cl>pid-file <span class=o>=</span> /data/mysql_db/mysql_seg_3307/mysql.pid
+</span></span><span class=line><span class=cl>skip-external-locking <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl>skip-name-resolve <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>port</span> <span class=o>=</span> <span class=m>3307</span>
+</span></span><span class=line><span class=cl><span class=nv>server_id</span> <span class=o>=</span> <span class=m>833307</span>
+</span></span><span class=line><span class=cl><span class=nv>read_only</span><span class=o>=</span><span class=m>1</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>default-storage-engine <span class=o>=</span> InnoDB
+</span></span><span class=line><span class=cl>character-set-server <span class=o>=</span> utf8mb4
+</span></span><span class=line><span class=cl><span class=nv>default_password_lifetime</span><span class=o>=</span><span class=m>0</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#### log ####</span>
+</span></span><span class=line><span class=cl><span class=nv>log_timestamps</span><span class=o>=</span>system
+</span></span><span class=line><span class=cl><span class=nv>log_bin</span> <span class=o>=</span> /data/mysql_log/mysql_seg_3307/mysql-bin
+</span></span><span class=line><span class=cl><span class=nv>log_bin_index</span> <span class=o>=</span> /data/mysql_log/mysql_seg_3307/mysql-bin.index
+</span></span><span class=line><span class=cl><span class=nv>binlog_format</span> <span class=o>=</span> row
+</span></span><span class=line><span class=cl><span class=nv>relay_log_recovery</span><span class=o>=</span>ON
+</span></span><span class=line><span class=cl><span class=nv>relay_log</span><span class=o>=</span>/data/mysql_log/mysql_seg_3307/mysql-relay-bin
+</span></span><span class=line><span class=cl><span class=nv>relay_log_index</span><span class=o>=</span>/data/mysql_log/mysql_seg_3307/mysql-relay-bin.index
+</span></span><span class=line><span class=cl><span class=nv>log_error</span> <span class=o>=</span> /data/mysql_log/mysql_seg_3307/mysql-error.log
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#### replication ####</span>
+</span></span><span class=line><span class=cl><span class=nv>replicate_wild_ignore_table</span> <span class=o>=</span> information_schema.%,performance_schema.%,sys.%
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#### semi sync replication settings #####</span>
+</span></span><span class=line><span class=cl><span class=nv>plugin_dir</span><span class=o>=</span>/usr/local/mysql57/lib/plugin
+</span></span><span class=line><span class=cl><span class=nv>plugin_load</span> <span class=o>=</span> <span class=s2>&#34;rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so&#34;</span>
+</span></span><span class=line><span class=cl><span class=nv>loose_rpl_semi_sync_master_enabled</span> <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>loose_rpl_semi_sync_slave_enabled</span> <span class=o>=</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=nv>loose_rpl_semi_sync_master_timeout</span> <span class=o>=</span> <span class=m>5000</span>
+</span></span></code></pre></div><h2 id=部署keepalived class=headerLink><a href=#%e9%83%a8%e7%bd%b2keepalived class=header-mark></a>部署keepalived</h2><p>安装：</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>yum install -y keepalived
+</span></span></code></pre></div><p>编辑<code>/etc/keepalived/keepalived.conf</code>文件, 按照实际情况加上下面的配置</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>global_defs <span class=o>{</span>
+</span></span><span class=line><span class=cl>   router_id MYSQL_MM  <span class=c1># 标识</span>
+</span></span><span class=line><span class=cl>   vrrp_skip_check_adv_addr
+</span></span><span class=line><span class=cl>   vrrp_strict        <span class=c1># 严格执行 VRRP 协议规范</span>
+</span></span><span class=line><span class=cl>   vrrp_garp_interval <span class=m>0</span>
+</span></span><span class=line><span class=cl>   vrrp_gna_interval <span class=m>0</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>vrrp_script check_mysql <span class=o>{</span>
+</span></span><span class=line><span class=cl>    script <span class=s2>&#34;/bin/bash /etc/keepalived/keepalived_mysql_check.sh&#34;</span>  <span class=c1># 检查脚本</span>
+</span></span><span class=line><span class=cl>    interval <span class=m>10</span>  <span class=c1># 检查周期</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>vrrp_instance MYSQL_MM <span class=o>{</span>
+</span></span><span class=line><span class=cl>    state BACKUP            <span class=c1># 都设为 BACKUP，避免起来后抢占</span>
+</span></span><span class=line><span class=cl>    interface eth0          <span class=c1># 网卡名称，根据实际情况填写</span>
+</span></span><span class=line><span class=cl>    virtual_router_id <span class=m>243</span>   <span class=c1># 用来区分 VRRP 组播的标记，取值 0-255</span>
+</span></span><span class=line><span class=cl>    priority <span class=m>100</span>
+</span></span><span class=line><span class=cl>    advert_int <span class=m>1</span>
+</span></span><span class=line><span class=cl>    nopreempt               <span class=c1># 设为非抢占</span>
+</span></span><span class=line><span class=cl>    authentication <span class=o>{</span>
+</span></span><span class=line><span class=cl>        auth_type PASS
+</span></span><span class=line><span class=cl>        auth_pass <span class=m>1111</span>
+</span></span><span class=line><span class=cl>    <span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1># Master 节点可以注释掉下面语句，防止启动 keepalived 的时候执行脚本</span>
+</span></span><span class=line><span class=cl>    notify_master <span class=s2>&#34;/bin/bash /etc/keepalived/keepalived_mysql_start.sh&#34;</span>  <span class=c1># 变为 MASTER 时执行</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    virtual_ipaddress <span class=o>{</span>
+</span></span><span class=line><span class=cl>        10.0.0.237
+</span></span><span class=line><span class=cl>    <span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1># Slave 节点可以注释下面检查脚本，Slave 没有必要一直检查</span>
+</span></span><span class=line><span class=cl>    track_script <span class=o>{</span>
+</span></span><span class=line><span class=cl>        check_mysql
+</span></span><span class=line><span class=cl>    <span class=o>}</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span></code></pre></div><p>创建并编辑<code>/etc/keepalived/keepalived_mysql_check.sh</code>文件， 写入检测脚本</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=cp>#!/bin/sh
+</span></span></span><span class=line><span class=cl><span class=cp></span><span class=c1># MySQL 检测脚本</span>
+</span></span><span class=line><span class=cl><span class=nv>MyPath</span><span class=o>=</span><span class=k>$(</span><span class=nb>cd</span> <span class=k>$(</span>dirname <span class=nv>$0</span><span class=k>)</span><span class=p>;</span> <span class=nb>pwd</span><span class=k>)</span>
+</span></span><span class=line><span class=cl><span class=nb>cd</span> <span class=nv>$MyPath</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nv>ThisTime</span><span class=o>=</span><span class=sb>`</span>date <span class=s1>&#39;+%F %T&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl><span class=nv>log_file</span><span class=o>=</span><span class=s1>&#39;/var/log/keepalived_mysql.log&#39;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># MySQL 连接方式，根据实际情况调整</span>
+</span></span><span class=line><span class=cl><span class=nb>export</span> <span class=nv>MYSQL_PWD</span><span class=o>=</span><span class=s1>&#39;monitor&#39;</span>
+</span></span><span class=line><span class=cl><span class=nv>MYSQL_USER</span><span class=o>=</span><span class=s1>&#39;monitor&#39;</span>
+</span></span><span class=line><span class=cl><span class=nv>MYSQL_SOCKET</span><span class=o>=</span><span class=s2>&#34;/data/mysql_db/test_db/mysql.sock&#34;</span>
+</span></span><span class=line><span class=cl><span class=nv>mysql_connect</span><span class=o>=</span><span class=s2>&#34;mysql -u</span><span class=si>${</span><span class=nv>MYSQL_USER</span><span class=si>}</span><span class=s2> -S</span><span class=si>${</span><span class=nv>MYSQL_SOCKET</span><span class=si>}</span><span class=s2> &#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 美化输出</span>
+</span></span><span class=line><span class=cl><span class=k>function</span> techo<span class=o>()</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=nv>message</span><span class=o>=</span><span class=nv>$1</span>
+</span></span><span class=line><span class=cl>    <span class=nv>message_level</span><span class=o>=</span><span class=nv>$2</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=o>[</span> -e <span class=nv>$message_level</span> <span class=o>]</span><span class=p>;</span><span class=k>then</span>
+</span></span><span class=line><span class=cl>        <span class=nv>message_level</span><span class=o>=</span><span class=s1>&#39;info&#39;</span>
+</span></span><span class=line><span class=cl>    <span class=k>fi</span>
+</span></span><span class=line><span class=cl>    <span class=nb>echo</span> <span class=s2>&#34;`date &#39;+%F %T&#39;` - [</span><span class=si>${</span><span class=nv>message_level</span><span class=si>}</span><span class=s2>] </span><span class=nv>$message</span><span class=s2>&#34;</span> &gt;&gt; <span class=nv>$log_file</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 检查函数, 正常返回 0</span>
+</span></span><span class=line><span class=cl><span class=k>function</span> check <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=nv>ret</span><span class=o>=</span><span class=sb>`</span><span class=nv>$mysql_connect</span> -N -e <span class=s1>&#39;select 1 as value&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=o>[</span> <span class=nv>$?</span> -ne <span class=m>0</span> <span class=o>]</span> <span class=o>||</span> <span class=o>[</span> <span class=nv>$ret</span> -ne <span class=s1>&#39;1&#39;</span> <span class=o>]</span><span class=p>;</span><span class=k>then</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl>    <span class=k>else</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=m>0</span>
+</span></span><span class=line><span class=cl>    <span class=k>fi</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>function</span> read_only <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=nv>param</span><span class=o>=</span><span class=nv>$1</span>
+</span></span><span class=line><span class=cl>    <span class=nv>$mysql_connect</span> -e <span class=s2>&#34;set global read_only = </span><span class=si>${</span><span class=nv>param</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>    techo <span class=s2>&#34;设置是否只读 read_only </span><span class=si>${</span><span class=nv>param</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 失效转移</span>
+</span></span><span class=line><span class=cl><span class=k>function</span> failover <span class=o>{</span>
+</span></span><span class=line><span class=cl>    techo <span class=s2>&#34;开始执行失效转移&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 1. 停止 keepalived</span>
+</span></span><span class=line><span class=cl>    killall keepalived
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1># 2. 如果还能执行的话，设为 read_only</span>
+</span></span><span class=line><span class=cl>    read_only <span class=m>1</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=o>[</span> <span class=nv>$?</span> -eq <span class=m>0</span> <span class=o>]</span><span class=p>;</span><span class=k>then</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 3. 如果还能执行，kill 所有的连接</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$mysql_connect</span> -e <span class=s2>&#34;select concat(&#39;KILL &#39;,id,&#39;;&#39;) from information_schema.processlist where user!=&#39;root&#39; AND db is not null into outfile &#39;/tmp/kill.txt.</span><span class=si>${</span><span class=nv>ThisTime</span><span class=si>}</span><span class=s2>&#39;;&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=o>[</span> <span class=nv>$?</span> -eq <span class=m>0</span> <span class=o>]</span><span class=p>;</span><span class=k>then</span>
+</span></span><span class=line><span class=cl>            <span class=nv>$mysql_connect</span> -e <span class=s2>&#34;source /tmp/kill.txt.</span><span class=si>${</span><span class=nv>ThisTime</span><span class=si>}</span><span class=s2>;&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=k>fi</span>
+</span></span><span class=line><span class=cl>    <span class=k>fi</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1># 4. 其他操作，比如说自动关机</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    techo <span class=s2>&#34;失效转移执行成功，当前数据库关闭访问&#34;</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 有问题检查 4 次</span>
+</span></span><span class=line><span class=cl><span class=k>for</span> <span class=o>((</span><span class=nv>i</span><span class=o>=</span>1<span class=p>;</span> i&lt;<span class=o>=</span>4<span class=p>;</span> i ++<span class=o>))</span>  
+</span></span><span class=line><span class=cl><span class=k>do</span>  
+</span></span><span class=line><span class=cl>    check
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=o>[</span> <span class=nv>$?</span> -eq <span class=m>0</span> <span class=o>]</span><span class=p>;</span><span class=k>then</span>
+</span></span><span class=line><span class=cl>        techo <span class=s2>&#34;MySQL is ok&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 正常退出脚本</span>
+</span></span><span class=line><span class=cl>        <span class=nb>exit</span> <span class=m>0</span>
+</span></span><span class=line><span class=cl>    <span class=k>else</span>
+</span></span><span class=line><span class=cl>        techo <span class=s2>&#34;Connection failed </span><span class=nv>$i</span><span class=s2> time(s)&#34;</span>
+</span></span><span class=line><span class=cl>        sleep <span class=m>1</span>
+</span></span><span class=line><span class=cl>    <span class=k>fi</span>
+</span></span><span class=line><span class=cl><span class=k>done</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>techo <span class=s1>&#39;无法连接当前数据库&#39;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 失效转移</span>
+</span></span><span class=line><span class=cl>failover
+</span></span></code></pre></div><p>打开 <code>/etc/keepalived/keepalived_mysql_start.sh</code>, 写入脚本内容</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=cp>#!/bin/sh
+</span></span></span><span class=line><span class=cl><span class=cp></span><span class=c1># keepalived 变为 Master 时执行</span>
+</span></span><span class=line><span class=cl><span class=nv>MyPath</span><span class=o>=</span><span class=k>$(</span><span class=nb>cd</span> <span class=k>$(</span>dirname <span class=nv>$0</span><span class=k>)</span><span class=p>;</span> <span class=nb>pwd</span><span class=k>)</span>
+</span></span><span class=line><span class=cl><span class=nb>cd</span> <span class=nv>$MyPath</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nv>ThisTime</span><span class=o>=</span><span class=sb>`</span>date <span class=s1>&#39;+%F %T&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl><span class=nv>log_file</span><span class=o>=</span><span class=s1>&#39;/var/log/keepalived_mysql.log&#39;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># MySQL 连接方式，根据实际情况调整</span>
+</span></span><span class=line><span class=cl><span class=nb>export</span> <span class=nv>MYSQL_PWD</span><span class=o>=</span><span class=s1>&#39;monitor&#39;</span>
+</span></span><span class=line><span class=cl><span class=nv>MYSQL_USER</span><span class=o>=</span><span class=s1>&#39;monitor&#39;</span>
+</span></span><span class=line><span class=cl><span class=nv>MYSQL_SOCKET</span><span class=o>=</span><span class=s2>&#34;/data/mysql_db/test_db/mysql.sock&#34;</span>
+</span></span><span class=line><span class=cl><span class=nv>mysql_connect</span><span class=o>=</span><span class=s2>&#34;mysql -u</span><span class=si>${</span><span class=nv>MYSQL_USER</span><span class=si>}</span><span class=s2> -S</span><span class=si>${</span><span class=nv>MYSQL_SOCKET</span><span class=si>}</span><span class=s2> &#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 美化输出</span>
+</span></span><span class=line><span class=cl><span class=k>function</span> techo<span class=o>()</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=nv>message</span><span class=o>=</span><span class=nv>$1</span>
+</span></span><span class=line><span class=cl>    <span class=nv>message_level</span><span class=o>=</span><span class=nv>$2</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=o>[</span> -e <span class=nv>$message_level</span> <span class=o>]</span><span class=p>;</span><span class=k>then</span>
+</span></span><span class=line><span class=cl>        <span class=nv>message_level</span><span class=o>=</span><span class=s1>&#39;info&#39;</span>
+</span></span><span class=line><span class=cl>    <span class=k>fi</span>
+</span></span><span class=line><span class=cl>    <span class=nb>echo</span> <span class=s2>&#34;`date &#39;+%F %T&#39;` - [</span><span class=si>${</span><span class=nv>message_level</span><span class=si>}</span><span class=s2>] </span><span class=nv>$message</span><span class=s2>&#34;</span> &gt;&gt; <span class=nv>$log_file</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 检查函数, 正常返回 0</span>
+</span></span><span class=line><span class=cl><span class=k>function</span> check <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=nv>ret</span><span class=o>=</span><span class=sb>`</span><span class=nv>$mysql_connect</span> -N -e <span class=s1>&#39;select 1 as value&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=o>[</span> <span class=nv>$?</span> -ne <span class=m>0</span> <span class=o>]</span> <span class=o>||</span> <span class=o>[</span> <span class=nv>$ret</span> -ne <span class=s1>&#39;1&#39;</span> <span class=o>]</span><span class=p>;</span><span class=k>then</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl>    <span class=k>else</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=m>0</span>
+</span></span><span class=line><span class=cl>    <span class=k>fi</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 获取 slave status 的信息</span>
+</span></span><span class=line><span class=cl><span class=k>function</span> slave_info<span class=o>()</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=nv>tmp_file</span><span class=o>=</span>/tmp/slave_info.tmp
+</span></span><span class=line><span class=cl>    <span class=nv>$mysql_connect</span> -e <span class=s1>&#39;show slave status\G&#39;</span> &gt; /tmp/slave_info.tmp
+</span></span><span class=line><span class=cl>    <span class=nv>slave_sql</span><span class=o>=</span><span class=sb>`</span>grep <span class=s1>&#39;Slave_SQL_Running:&#39;</span> <span class=nv>$tmp_file</span> <span class=p>|</span> sed <span class=s1>&#39;s/\s*//g&#39;</span> <span class=p>|</span> tr <span class=s2>&#34;A-Z&#34;</span> <span class=s2>&#34;a-z&#34;</span>  <span class=p>|</span> awk -F<span class=s2>&#34;:&#34;</span> <span class=s1>&#39;{print $2}&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl>    <span class=nv>seconds_behind_master</span><span class=o>=</span><span class=sb>`</span>grep <span class=s1>&#39;Seconds_Behind_Master:&#39;</span> <span class=nv>$tmp_file</span> <span class=p>|</span> sed <span class=s1>&#39;s/\s*//g&#39;</span> <span class=p>|</span> tr <span class=s2>&#34;A-Z&#34;</span> <span class=s2>&#34;a-z&#34;</span>  <span class=p>|</span> awk -F<span class=s2>&#34;:&#34;</span> <span class=s1>&#39;{print $2}&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nv>master_log_file</span><span class=o>=</span><span class=sb>`</span>grep <span class=s1>&#39;Master_Log_File:&#39;</span> <span class=nv>$tmp_file</span> <span class=p>|</span> head -1 <span class=p>|</span> sed <span class=s1>&#39;s/\s*//g&#39;</span> <span class=p>|</span> tr <span class=s2>&#34;A-Z&#34;</span> <span class=s2>&#34;a-z&#34;</span>  <span class=p>|</span> awk -F<span class=s2>&#34;:&#34;</span> <span class=s1>&#39;{print $2}&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl>    <span class=nv>master_log_pos</span><span class=o>=</span><span class=sb>`</span>grep <span class=s1>&#39;Read_Master_Log_Pos:&#39;</span> <span class=nv>$tmp_file</span> <span class=p>|</span> sed <span class=s1>&#39;s/\s*//g&#39;</span> <span class=p>|</span> tr <span class=s2>&#34;A-Z&#34;</span> <span class=s2>&#34;a-z&#34;</span>  <span class=p>|</span> awk -F<span class=s2>&#34;:&#34;</span> <span class=s1>&#39;{print $2}&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nv>relay_master_log_file</span><span class=o>=</span><span class=sb>`</span>grep <span class=s1>&#39;Relay_Master_Log_File:&#39;</span> <span class=nv>$tmp_file</span> <span class=p>|</span> sed <span class=s1>&#39;s/\s*//g&#39;</span> <span class=p>|</span> tr <span class=s2>&#34;A-Z&#34;</span> <span class=s2>&#34;a-z&#34;</span>  <span class=p>|</span> awk -F<span class=s2>&#34;:&#34;</span> <span class=s1>&#39;{print $2}&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl>    <span class=nv>exec_master_log_pos</span><span class=o>=</span><span class=sb>`</span>grep <span class=s1>&#39;Exec_Master_Log_Pos:&#39;</span> <span class=nv>$tmp_file</span> <span class=p>|</span> sed <span class=s1>&#39;s/\s*//g&#39;</span> <span class=p>|</span> tr <span class=s2>&#34;A-Z&#34;</span> <span class=s2>&#34;a-z&#34;</span>  <span class=p>|</span> awk -F<span class=s2>&#34;:&#34;</span> <span class=s1>&#39;{print $2}&#39;</span><span class=sb>`</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 设置是否可读</span>
+</span></span><span class=line><span class=cl><span class=k>function</span> read_only <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=nv>param</span><span class=o>=</span><span class=nv>$1</span>
+</span></span><span class=line><span class=cl>    <span class=nv>$mysql_connect</span> -e <span class=s2>&#34;set global read_only = </span><span class=si>${</span><span class=nv>param</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>    techo <span class=s2>&#34;设置是否只读 read_only </span><span class=si>${</span><span class=nv>param</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 处理数据同步</span>
+</span></span><span class=line><span class=cl><span class=k>function</span> sync_master_log<span class=o>()</span> <span class=o>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 如果是数据一致性优先，等待同步完毕。如果是服务可用性优先，可以注销下面的代码</span>
+</span></span><span class=line><span class=cl>    slave_info
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=o>[</span> <span class=nv>$slave_sql</span> <span class=o>==</span> <span class=s2>&#34;yes&#34;</span> <span class=o>]</span><span class=p>;</span><span class=k>then</span>
+</span></span><span class=line><span class=cl>        techo <span class=s2>&#34;当前同步位置 Master </span><span class=si>${</span><span class=nv>master_log_file</span><span class=si>}</span><span class=s2> </span><span class=si>${</span><span class=nv>master_log_pos</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>        techo <span class=s2>&#34;等待同步到 Master </span><span class=si>${</span><span class=nv>master_log_file</span><span class=si>}</span><span class=s2> </span><span class=si>${</span><span class=nv>master_log_pos</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$mysql_connect</span> -e <span class=s2>&#34;select master_pos_wait(&#39;</span><span class=nv>$master_log_file</span><span class=s2>&#39;, </span><span class=nv>$master_log_pos</span><span class=s2>);&#34;</span> &gt; /dev/null
+</span></span><span class=line><span class=cl>        techo <span class=s2>&#34;同步完毕&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=k>fi</span>
+</span></span><span class=line><span class=cl><span class=o>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>techo <span class=s2>&#34;当前数据库提升为主库&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>check
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=o>[</span> <span class=nv>$?</span> -ne <span class=m>0</span> <span class=o>]</span><span class=p>;</span><span class=k>then</span>
+</span></span><span class=line><span class=cl>    techo <span class=s2>&#34;无法连接当前数据库&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=nb>exit</span> <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=k>fi</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 等待同步</span>
+</span></span><span class=line><span class=cl>sync_master_log
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 设为可写</span>
+</span></span><span class=line><span class=cl>read_only <span class=m>0</span>
+</span></span></code></pre></div><p>进入mysql修创建对应的同步用户</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sql data-lang=sql><span class=line><span class=cl><span class=k>grant</span><span class=w> </span><span class=n>replication</span><span class=w> </span><span class=n>slave</span><span class=w> </span><span class=k>on</span><span class=w> </span><span class=o>*</span><span class=p>.</span><span class=o>*</span><span class=w> </span><span class=k>to</span><span class=w> </span><span class=s1>&#39;sync&#39;</span><span class=o>@</span><span class=s1>&#39;ip&#39;</span><span class=w> </span><span class=n>identify</span><span class=w> </span><span class=k>by</span><span class=w> </span><span class=s1>&#39;password&#39;</span><span class=p>;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=k>show</span><span class=w> </span><span class=n>master</span><span class=w> </span><span class=n>status</span><span class=p>;</span><span class=w>
+</span></span></span></code></pre></div><p>停止slave</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sql data-lang=sql><span class=line><span class=cl><span class=n>stop</span><span class=w> </span><span class=n>slave</span><span class=p>;</span><span class=w>
+</span></span></span></code></pre></div><p>修改对应的master</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sql data-lang=sql><span class=line><span class=cl><span class=n>change</span><span class=w> </span><span class=n>master</span><span class=w> </span><span class=k>to</span><span class=w> 
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=n>master_host</span><span class=o>=</span><span class=s1>&#39;&#39;</span><span class=p>,</span><span class=w> 
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=n>master_user</span><span class=o>=</span><span class=s1>&#39;sync&#39;</span><span class=p>,</span><span class=w> 
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=n>master_password</span><span class=o>=</span><span class=s1>&#39;&#39;</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=n>master_log_file</span><span class=o>=</span><span class=s1>&#39;mysql-bin.000003&#39;</span><span class=p>,</span><span class=w> 
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=n>master_log_pos</span><span class=o>=</span><span class=mi>154</span><span class=p>,</span><span class=w> 
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=n>master_port</span><span class=o>=</span><span class=mi>3306</span><span class=p>;</span><span class=w>
+</span></span></span></code></pre></div><p>查看slave的状态</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sql data-lang=sql><span class=line><span class=cl><span class=k>show</span><span class=w> </span><span class=n>slave</span><span class=w> </span><span class=n>status</span><span class=err>\</span><span class=k>G</span><span class=p>;</span><span class=w>
+</span></span></span></code></pre></div></div><div class=post-footer id=post-footer><div class=post-info><div class=post-info-line><div class=post-info-mod><span>Updated on 2024-03-28</span></div><div class=post-info-license></div></div><div class=post-info-line><div class=post-info-md></div><div class=post-info-share><button title="Share on Twitter" data-sharer=twitter data-url=https://blog.plz.ac/posts/mysql-mm/ data-title="Mysql 双主部署" data-hashtags=Linux,Mysql,Keepalived><span class="fab fa-twitter fa-fw"></span></button><button title="Share on Facebook" data-sharer=facebook data-url=https://blog.plz.ac/posts/mysql-mm/ data-hashtag=Linux><span class="fab fa-facebook-square fa-fw"></span></button><button title="Share on Linkedin" data-sharer=linkedin data-url=https://blog.plz.ac/posts/mysql-mm/><span class="fab fa-linkedin fa-fw"></span></button><button title="Share on WhatsApp" data-sharer=whatsapp data-url=https://blog.plz.ac/posts/mysql-mm/ data-title="Mysql 双主部署" data-web><span class="fab fa-whatsapp fa-fw"></span></button><button title="Share on Reddit" data-sharer=reddit data-url=https://blog.plz.ac/posts/mysql-mm/><span class="fab fa-reddit fa-fw"></span></button><button title="Share on Line" data-sharer=line data-url=https://blog.plz.ac/posts/mysql-mm/ data-title="Mysql 双主部署"><span data-svg-src=/lib/simple-icons/icons/line.min.svg></span></button><button title="Share on Blogger" data-sharer=blogger data-url=https://blog.plz.ac/posts/mysql-mm/ data-title="Mysql 双主部署" data-description="Mysql 双主部署"><span class="fab fa-blogger fa-fw"></span></button><button title="Share on Evernote" data-sharer=evernote data-url=https://blog.plz.ac/posts/mysql-mm/ data-title="Mysql 双主部署"><span class="fab fa-evernote fa-fw"></span></button><button title="Share on Trello" data-sharer=trello data-url=https://blog.plz.ac/posts/mysql-mm/ data-title="Mysql 双主部署" data-description="Mysql 双主部署"><span class="fab fa-trello fa-fw"></span></button><script>function shareOnMastodon(e,t){const o="share_mastodon_domain",i=localStorage.getItem(o)??"mastodon.social",n=prompt("Enter your Mastodon domain",i);if(n===null)return;localStorage.setItem(o,n);const a=e+`
+
+`+t,s=new URL("https://"+n);s.pathname="share",s.searchParams.append("text",a),window.open(s,"_blank","width=500,height=500,left=500,toolbar=0,status=0")}</script>
+<button title="Share on Mastodon" onclick='shareOnMastodon("Mysql 双主部署","https://blog.plz.ac/posts/mysql-mm/")'><span class="fab fa-mastodon fa-fw"></span></button></div></div></div><div class=post-info-more><section class=post-tags><i class="fas fa-tags fa-fw"></i>&nbsp;<a href=/tags/linux/>Linux</a>,&nbsp;<a href=/tags/mysql/>Mysql</a>,&nbsp;<a href=/tags/keepalived/>Keepalived</a></section><section><span><a href=javascript:void(0); onclick=window.history.back()>Back</a></span>&nbsp;|&nbsp;<span><a href=/>Home</a></span></section></div><div class=post-nav><a href=/posts/gentoo-kvm-pci-passthrough/ class=prev rel=prev title="Gentoo PCI KVM设备直通"><i class="fas fa-angle-left fa-fw"></i>Gentoo PCI KVM设备直通</a>
+<a href=/posts/gcp-ubuntu-1804-vncserver/ class=next rel=next title="GCP上Ubuntu 18.04 部署VNCSERVER">GCP上Ubuntu 18.04 部署VNCSERVER<i class="fas fa-angle-right fa-fw"></i></a></div></div><div id=comments><div id=utterances></div><noscript>Please enable JavaScript to view the comments powered by <a href=https://utteranc.es/>Utterances</a>.</noscript></div></article></div></main><footer class=footer><div class=footer-container><div class=footer-line>Powered by <a href=https://gohugo.io/ target=_blank rel="noopener noreferrer" title="Hugo 0.110.0">Hugo</a>&nbsp;|&nbsp;Theme - <a href=https://github.com/HEIGE-PCloud/DoIt target=_blank rel="noopener noreferrer" title="DoIt 0.4.0"><i class="far fa-edit fa-fw"></i> DoIt</a></div><div class=footer-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2023 - 2024</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://blog.plz.ac target=_blank rel="noopener noreferrer">Chris Su</a></span>&nbsp;|&nbsp;<span class=license><a rel="license external nofollow noopener noreffer" href=https://creativecommons.org/licenses/by-nc/4.0/ target=_blank>CC BY-NC 4.0</a></span></div><div class=footer-line></div><div class=footer-line></div></div><script>"serviceWorker"in navigator&&(navigator.serviceWorker.register("/sw.min.js",{scope:"/"}).then(function(){}),navigator.serviceWorker.ready.then(function(){}))</script></footer></div><div id=fixed-buttons><a href=#back-to-top id=back-to-top-button class=fixed-button title="Back to Top"><i class="fas fa-arrow-up fa-fw"></i>
+</a><a href=# id=view-comments class=fixed-button title="View Comments"><i class="fas fa-comment fa-fw"></i></a></div><div class=assets><link rel=stylesheet href=/lib/katex/katex.min.css><link rel=preload as=style onload='this.onload=null,this.rel="stylesheet"' href=/lib/katex/copy-tex.min.css><noscript><link rel=stylesheet href=/lib/katex/copy-tex.min.css></noscript><script type=text/javascript>window.config={code:{copyTitle:"Copy to clipboard",maxShownLines:10},comment:{utterances:{darkTheme:"github-dark",issueTerm:"pathname",label:"",lightTheme:"github-light",repo:"slchris/blog.plz.ac-comments"}},math:{delimiters:[{display:!0,left:"$$",right:"$$"},{display:!0,left:"\\[",right:"\\]"},{display:!1,left:"$",right:"$"},{display:!1,left:"\\(",right:"\\)"}],strict:!1},sharerjs:!0,table:{sort:!0}}</script><script type=text/javascript src=/lib/tablesort/tablesort.min.js></script><script type=text/javascript src=/lib/clipboard/clipboard.min.js></script><script type=text/javascript src=/lib/sharer/sharer.min.js></script><script type=text/javascript src=/lib/katex/katex.min.js defer></script><script type=text/javascript src=/lib/katex/auto-render.min.js defer></script><script type=text/javascript src=/lib/katex/copy-tex.min.js defer></script><script type=text/javascript src=/lib/katex/mhchem.min.js defer></script><script type=text/javascript src=/js/katex.min.js defer></script><script type=text/javascript src=/js/theme.min.js defer></script><script type=text/javascript src=/js/utterances.min.js defer></script><script async defer data-website-id=83973c25-5323-4ad6-952e-f39357769191 src=https://umami.plz.ac/script.js data-host-url=https://umami.plz.ac data-domains=blog.plz.ac></script></div></body></html>
