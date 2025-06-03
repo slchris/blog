@@ -723,7 +723,7 @@ tw-w-full tw-bg-bgColor-secondary"><button class="code-block-button
 tw-mx-2
 tw-flex
 tw-flex-row
-tw-flex-1" aria-hidden=true><div class="group-[.is-open]:tw-rotate-90 tw-transition-[transform] tw-duration-500 tw-ease-in-out print:!tw-hidden tw-w-min tw-h-min tw-my-1 tw-mx-1"><svg class="icon" viewBox="0 0 320 512"><path d="M285.476 272.971 91.132 467.314c-9.373 9.373-24.569 9.373-33.941.0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941.0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg></div><p class="tw-select-none !tw-my-1">text</p></button><div class=tw-flex><button class="line-number-button
+tw-flex-1" aria-hidden=true><div class="group-[.is-open]:tw-rotate-90 tw-transition-[transform] tw-duration-500 tw-ease-in-out print:!tw-hidden tw-w-min tw-h-min tw-my-1 tw-mx-1"><svg class="icon" viewBox="0 0 320 512"><path d="M285.476 272.971 91.132 467.314c-9.373 9.373-24.569 9.373-33.941.0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941.0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg></div><p class="tw-select-none !tw-my-1">yaml</p></button><div class=tw-flex><button class="line-number-button
 tw-mx-2
 tw-hidden
 group-[.is-open]:tw-block
@@ -761,36 +761,36 @@ group-[.is-closed]:!tw-max-h-0
 group-[.is-wrap]:tw-text-wrap
 tw-overflow-y-hidden
 tw-overflow-x-auto
-tw-scrollbar-thin"><pre tabindex=0><code>---
-registry_host: &#34;harbor.infra.plz.ac/k8s&#34;
-files_repo: &#34;https://mirrors.infra.plz.ac/k8s&#34;
-kube_image_repo: &#34;{{ registry_host }}&#34;
-gcr_image_repo: &#34;{{ registry_host }}&#34;
-github_image_repo: &#34;{{ registry_host }}&#34;
-docker_image_repo: &#34;{{ registry_host }}&#34;
-quay_image_repo: &#34;{{ registry_host }}&#34;
-kubeadm_download_url: &#34;{{ files_repo }}/dl.k8s.io/release/v{{ kube_version }}/bin/linux/{{ image_arch }}/kubeadm&#34;
-kubectl_download_url: &#34;{{ files_repo }}/dl.k8s.io/release/v{{ kube_version }}/bin/linux/{{ image_arch }}/kubectl&#34;
-kubelet_download_url: &#34;{{ files_repo }}/dl.k8s.io/release/v{{ kube_version }}/bin/linux/{{ image_arch }}/kubelet&#34;
-cni_download_url: &#34;{{ files_repo }}/github.com/containernetworking/plugins/releases/download/v{{ cni_version }}/cni-plugins-linux-{{ image_arch }}-v{{ cni_version }}.tgz&#34;
-crictl_download_url: &#34;{{ files_repo }}/github.com/kubernetes-sigs/cri-tools/releases/download/v{{ crictl_version }}/crictl-v{{ crictl_version }}-{{ ansible_system | lower }}-{{ image_arch }}.tar.gz&#34;
-etcd_download_url: &#34;{{ files_repo }}/github.com/etcd-io/etcd/releases/download/v{{ etcd_version }}/etcd-v{{ etcd_version }}-linux-{{ image_arch }}.tar.gz&#34;
-calicoctl_download_url: &#34;{{ files_repo }}/github.com/projectcalico/calico/releases/download/v{{ calico_ctl_version }}/calicoctl-linux-{{ image_arch }}&#34;
-calico_crds_download_url: &#34;{{ files_repo }}/github.com/projectcalico/calico/archive/v{{ calico_version }}.tar.gz&#34;
-ciliumcli_download_url: &#34;{{ files_repo }}/github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-{{ image_arch }}.tar.gz&#34;
-helm_download_url: &#34;{{ files_repo }}/get.helm.sh/helm-v{{ helm_version }}-linux-{{ image_arch }}.tar.gz&#34;
-crun_download_url: &#34;{{ files_repo }}/github.com/containers/crun/releases/download/{{ crun_version }}/crun-{{ crun_version }}-linux-{{ image_arch }}&#34;
-kata_containers_download_url: &#34;{{ files_repo }}/github.com/kata-containers/kata-containers/releases/download/{{ kata_containers_version }}/kata-static-{{ kata_containers_version }}-{{ image_arch }}.tar.xz&#34;
-cri_dockerd_download_url: &#34;{{ files_repo }}/github.com/Mirantis/cri-dockerd/releases/download/v{{ cri_dockerd_version }}/cri-dockerd-{{ cri_dockerd_version }}.{{ image_arch }}.tgz&#34;
-runc_download_url: &#34;{{ files_repo }}/github.com/opencontainers/runc/releases/download/v{{ runc_version }}/runc.{{ image_arch }}&#34;
-crio_download_base: &#34;download.opensuse.org/repositories/devel:kubic:libcontainers:stable&#34;
-crio_download_crio: &#34;http://{{ crio_download_base }}:/cri-o:/&#34;
-crio_download_url: &#34;{{ files_repo }}/storage.googleapis.com/cri-o/artifacts/cri-o.{{ image_arch }}.v{{ crio_version }}.tar.gz&#34;
-skopeo_download_url: &#34;{{ files_repo }}/github.com/lework/skopeo-binary/releases/download/v{{ skopeo_version }}/skopeo-linux-{{ image_arch }}&#34;
-containerd_download_url: &#34;{{ files_repo }}/github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-{{ image_arch }}.tar.gz&#34;
-nerdctl_download_url: &#34;{{ files_repo }}/github.com/containerd/nerdctl/releases/download/v{{ nerdctl_version }}/nerdctl-{{ nerdctl_version }}-{{ ansible_system | lower }}-{{ image_arch }}.tar.gz&#34;
-gvisor_runsc_download_url: &#34;{{ files_repo }}/storage.googleapis.com/gvisor/releases/release/{{ gvisor_version }}/{{ ansible_architecture }}/runsc&#34;
-gvisor_containerd_shim_runsc_download_url: &#34;{{ files_repo }}/storage.googleapis.com/gvisor/releases/release/{{ gvisor_version }}/{{ ansible_architecture }}/containerd-shim-runsc-v1&#34;</code></pre></code></pre></div><h3 id=部署准备 class=headerLink><a href=#%e9%83%a8%e7%bd%b2%e5%87%86%e5%a4%87 class=header-mark></a>部署准备</h3><p>创建虚拟环境：</p><div class="code-block highlight is-open show-line-numbers tw-group tw-my-2"><div class="tw-flex
+tw-scrollbar-thin"><span class=line><span class=cl><span class=nn>---</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>registry_host</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;harbor.infra.plz.ac/k8s&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>files_repo</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;https://mirrors.infra.plz.ac/k8s&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kube_image_repo</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ registry_host }}&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>gcr_image_repo</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ registry_host }}&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>github_image_repo</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ registry_host }}&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>docker_image_repo</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ registry_host }}&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>quay_image_repo</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ registry_host }}&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kubeadm_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/dl.k8s.io/release/v{{ kube_version }}/bin/linux/{{ image_arch }}/kubeadm&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kubectl_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/dl.k8s.io/release/v{{ kube_version }}/bin/linux/{{ image_arch }}/kubectl&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kubelet_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/dl.k8s.io/release/v{{ kube_version }}/bin/linux/{{ image_arch }}/kubelet&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>cni_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/containernetworking/plugins/releases/download/v{{ cni_version }}/cni-plugins-linux-{{ image_arch }}-v{{ cni_version }}.tgz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>crictl_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/kubernetes-sigs/cri-tools/releases/download/v{{ crictl_version }}/crictl-v{{ crictl_version }}-{{ ansible_system | lower }}-{{ image_arch }}.tar.gz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>etcd_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/etcd-io/etcd/releases/download/v{{ etcd_version }}/etcd-v{{ etcd_version }}-linux-{{ image_arch }}.tar.gz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>calicoctl_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/projectcalico/calico/releases/download/v{{ calico_ctl_version }}/calicoctl-linux-{{ image_arch }}&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>calico_crds_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/projectcalico/calico/archive/v{{ calico_version }}.tar.gz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>ciliumcli_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-{{ image_arch }}.tar.gz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>helm_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/get.helm.sh/helm-v{{ helm_version }}-linux-{{ image_arch }}.tar.gz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>crun_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/containers/crun/releases/download/{{ crun_version }}/crun-{{ crun_version }}-linux-{{ image_arch }}&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kata_containers_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/kata-containers/kata-containers/releases/download/{{ kata_containers_version }}/kata-static-{{ kata_containers_version }}-{{ image_arch }}.tar.xz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>cri_dockerd_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/Mirantis/cri-dockerd/releases/download/v{{ cri_dockerd_version }}/cri-dockerd-{{ cri_dockerd_version }}.{{ image_arch }}.tgz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>runc_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/opencontainers/runc/releases/download/v{{ runc_version }}/runc.{{ image_arch }}&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>crio_download_base</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;download.opensuse.org/repositories/devel:kubic:libcontainers:stable&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>crio_download_crio</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;http://{{ crio_download_base }}:/cri-o:/&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>crio_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/storage.googleapis.com/cri-o/artifacts/cri-o.{{ image_arch }}.v{{ crio_version }}.tar.gz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>skopeo_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/lework/skopeo-binary/releases/download/v{{ skopeo_version }}/skopeo-linux-{{ image_arch }}&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>containerd_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-{{ image_arch }}.tar.gz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>nerdctl_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/github.com/containerd/nerdctl/releases/download/v{{ nerdctl_version }}/nerdctl-{{ nerdctl_version }}-{{ ansible_system | lower }}-{{ image_arch }}.tar.gz&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>gvisor_runsc_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/storage.googleapis.com/gvisor/releases/release/{{ gvisor_version }}/{{ ansible_architecture }}/runsc&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>gvisor_containerd_shim_runsc_download_url</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;{{ files_repo }}/storage.googleapis.com/gvisor/releases/release/{{ gvisor_version }}/{{ ansible_architecture }}/containerd-shim-runsc-v1&#34;</span></span></span></code></pre></div><h3 id=部署准备 class=headerLink><a href=#%e9%83%a8%e7%bd%b2%e5%87%86%e5%a4%87 class=header-mark></a>部署准备</h3><p>创建虚拟环境：</p><div class="code-block highlight is-open show-line-numbers tw-group tw-my-2"><div class="tw-flex
 tw-flex-row
 tw-flex-1
 tw-justify-between
